@@ -17,11 +17,14 @@ class BaseModel:
 
         if kwargs:
             dates_format = "%Y-%m-%dT%H:%M:%S.%f"
+            if "created_at" in kwargs:
+                kwargs["created_at"] = datetime.strptime(kwargs["created_at"], dates_format)
+            if "updated_at" in kwargs:
+                kwargs["updated_at"] = datetime.strptime(kwargs["updated_at"], dates_format)
+
             for k, v in kwargs.items():
-                if k == "created_at" or k == "updated_at":
-                    setattr(self, k, datetime.strptime(v, dates_format))
-                else:
-                    setattr(self, k, v)
+                if "__class__" not in k:
+                    setattr(self ,k, v)
         else:
             models.storage.new(self)
 
