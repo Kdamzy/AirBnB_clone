@@ -96,7 +96,7 @@ class TestBaseModel_save(unittest.TestCase):
         self.assertEqual(my_mod.updated_at, a)
 
     def test_save_with_arg(self):
-        """test save method with argument"""
+        """test if save method with argument"""
         my_mod = BaseModel()
         with self.assertRaises(TypeError):
             my_mod.save(None)
@@ -125,13 +125,13 @@ class TestBaseModel_to_dict(unittest.TestCase):
         self.assertIn("updated_at", my_mod.to_dict())
         self.assertIn("__class__", my_mod.to_dict())
 
-    def test_to_dict_datetime_attributes_are_strs(self):
+    def test_to_dict_datetime(self):
         my_mod = BaseModel()
         model_dict = my_mod.to_dict()
         self.assertIsInstance(str, type(model_dict["created_at"]))
         self.assertIsInstance(str, type(model_dict["updated_at"]))
 
-    def test_contrast_to_dict_dunder_dict(self):
+    def test_contrast_to_dict(self):
         my_mod = BaseModel()
         self.assertNotEqual(my_mod.to_dict(), my_mod.__dict__)
 
