@@ -4,12 +4,7 @@ from models.base_model import BaseModel
 
 
 class City(BaseModel):
-    """This would reps a city.
-
-    Attributes:
-        state_id (str): The state id.
-        name (str): The name of the city.
-    """
+    """The state id and name."""
 
     state_id = ""
     name = ""
