@@ -4,10 +4,6 @@ from models.base_model import BaseModel
 
 
 class State(BaseModel):
-    """This would reps a state.
-
-    Attributes:
-        name (str): The name of the state.
-    """
+    """A state, and the attribute must be empty."""
 
     name = ""
