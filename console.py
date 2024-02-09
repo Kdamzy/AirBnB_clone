@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 """Defines the HBnB console."""
 import cmd
-import models
-import re
 from shlex import split
 from models import storage
 from models.base_model import BaseModel
@@ -37,143 +35,131 @@ class HBNBCommand(cmd.Cmd):
         return True
 
     def do_EOF(self, arg):
-        """EOF signal to exit the program."""
+        """EOF Exit the program."""
         print("")
         return True
 
     def do_create(self, lines):
         """Create a new class instance and print its id."""
         split_list = split(lines)
-        if len(split_list) == 0:
+        if not split_list:
             print("** class name missing **")
-        elif split_list[0] not in HBNBCommand.__classes:
+        elif split_list[0] not in self.__classes:
             print("** class doesn't exist **")
         else:
-            print(eval(split_list[0])().id)
+            new_instance = eval(split_list[0])()
+            print(new_instance.id)
             storage.save()
 
     def do_show(self, lines):
         """Display the string rep of a class instance based on name and id."""
         split_list = split(lines)
         dict_obj = storage.all()
-        if len(split_list) == 0:
+        if not split_list:
             print("** class name missing **")
-        elif split_list[0] not in HBNBCommand.__classes:
+        elif split_list[0] not in self.__classes:
             print("** class doesn't exist **")
-        elif len(split_list) == 1:
+        elif len(split_list) < 2:
             print("** instance id missing **")
-        elif f"{split_list[0]}.{split_list[1]}" not in dict_obj:
-            print("** no instance found **")
         else:
-            print(dict_obj["{}.{}".format(split_list[0], split_list[1])])
+            instance_key = "{}.{}".format(split_list[0], split_list[1])
+            print(dict_obj.get(instance_key,"** no instance found **"))
 
     def do_destroy(self, line):
         """Delete a class instance of a given name and id."""
         split_list= split(line)
         dict_obj = storage.all()
-        if len(split_list) == 0:
+        if not split_list:
             print("** class name missing **")
-        elif split_list[0] not in HBNBCommand.__classes:
+        elif split_list[0] not in self.__classes:
             print("** class doesn't exist **")
-        elif len(split_list) == 1:
+        elif len(split_list) < 2:
             print("** instance id missing **")
-        elif f"{split_list[0]}.{split_list[1]}" not in dict_obj.keys():
-            print("** no instance found **")
         else:
-            del dict_obj[f"{split_list[0]}.{split_list[1]}"]
-            storage.save()
+            instance_key = "{}.{}".format(split_list[0], split_list[1])
+            if instance_key in dict_obj:
+                del dict_obj[instance_key]
+                storage.save()
+            else:
+                print("** no instance found **")
 
     def do_all(self, line):
         """print all instance based on class name"""
-        splitted_arg_list = split(line)
-        if len(splitted_arg_list) > 0 and splitted_arg_list[0] not in HBNBCommand.__classes:
+        split_list = split(line)
+        if split_list and split_list[0] not in self.__classes:
             print("** class doesn't exist **")
         else:
-            my_obj_list = []
+            my_obj = []
             for obj in storage.all().values():
-                if len(splitted_arg_list) > 0 and splitted_arg_list[0] == obj.__class__.__name__:
-                    my_obj_list.append(obj.__str__())
-                elif len(splitted_arg_list) == 0:
-                    my_obj_list.append(obj.__str__())
-            print(my_obj_list)
+                if not split_list or obj.__class__.__name__ == split_list[0]:
+                    my_obj.append(str(obj))
+                    print(my_obj)
 
-    def do_count(self, arg):
-        """Usage: count <class> or <class>.count()
-        Retrieve the number of instances of a given class."""
-        splitted_arg_list = split_arg(arg)
-        count = 0
-        for obj in storage.all().values():
-            if splitted_arg_list[0] == obj.__class__.__name__:
-                count += 1
-        print(count)
+    def do_count(self, line):
+        """Retrieve the number of instances of a given class."""
+        split_list = split(line)
+        if not split_list or split_list[0] not in self.__classes:
+            print(0)
+        else:
+            count = sum(1)
+            for obj in storage.all().values():
+                if obj.__class__.__name__ == split_list[0]:
+                    print(count)
 
-    def do_update(self, arg):
-        """Usage: update <class> <id> <attribute_name> <attribute_value> or
-       <class>.update(<id>, <attribute_name>, <attribute_value>) or
-       <class>.update(<id>, <dictionary>)
-        Update a class instance of a given id by adding or updating
-        a given attribute key/value pair or dictionary."""
-        splitted_arg_list = split_arg(arg)
-        all_obj_dict = storage.all()
+    def do_update(self, line):
+        """Update a class instance of a given id."""
+        split_list = split(line)
+        dict_obj = storage.all()
 
-        if len(splitted_arg_list) == 0:
+        if not split_list:
             print("** class name missing **")
             return False
-        """Checks if the class name is provided and exists in the registered classes.
-        """
-        if splitted_arg_list[0] not in HBNBCommand.__classes:
+        if split_list[0] not in self.__classes:
             print("** class doesn't exist **")
             return False
-        """
-        Checks if the instance ID is provided and if an instance with that ID exists.
-        """
-        if len(splitted_arg_list) == 1:
+
+        if len(split_list) < 2:
             print("** instance id missing **")
             return False
-        if f"{splitted_arg_list[0]}.{splitted_arg_list[1]}" not in all_obj_dict.keys():
+        instance_key = "{}.{}".format(split_list[0], split_list[1])
+        if instance_key not in dict_obj.keys():
             print("** no instance found **")
             return False
-        """
-        Checks if the attribute name is provided.
-        """
-        if len(splitted_arg_list) == 2:
+
+        if len(split_list) < 3:
             print("** attribute name missing **")
             return False
-        """
-        Checks if the value is provided when updating a specific attribute.
-        """
-        if len(splitted_arg_list) == 3:
-            try:
-                type(eval(splitted_arg_list[2])) != dict
-            except NameError:
-                print("** value missing **")
-                return False
-        """
-        If all conditions are met, it proceeds to update the specified attribute
-        of the instance with the given value.
-        """
-        if len(splitted_arg_list) == 4:
-            obj = all_obj_dict["{}.{}".format(splitted_arg_list[0], splitted_arg_list[1])]
-            if splitted_arg_list[2] in obj.__class__.__dict__.keys():
-                valtype = type(obj.__class__.__dict__[splitted_arg_list[2]])
-                obj.__dict__[splitted_arg_list[2]] = valtype(splitted_arg_list[3])
-            else:
-                obj.__dict__[splitted_arg_list[2]] = splitted_arg_list[3]
-        elif type(eval(splitted_arg_list[2])) == dict:
-            """checks to see if the value is a dictionary
-            then iterates and updates every element provided
-            """
-            obj = all_obj_dict["{}.{}".format(splitted_arg_list[0], splitted_arg_list[1])]
-            for my_key, val in eval(splitted_arg_list[2]).items():
-                if (my_key in obj.__class__.__dict__.keys() and
-                        type(obj.__class__.__dict__[my_key]) in {str, int, float}):
-                    valtype = type(obj.__class__.__dict__[my_key])
-                    obj.__dict__[my_key] = valtype(val)
-                else:
-                    obj.__dict__[my_key] = val
+        
+        if len(split_list) < 4:
+            print("** value missing **")
+            return False
+
+        obj = dict_obj[instance_key]
+        setattr(obj, split_list[2], split_list[3])
         storage.save()
+        
+    def default(self, line):
+        """Parse and interpretates a line if commands not found"""
+        obj_dict = {
+            "all": self.do_all,
+            "show": self.do_show,
+            "destroy": self.do_destroy,
+            "count": self.do_count,
+            "update": self.do_update
+        }
+        dot_index = line.find('.')
+        if dot_index != -1:
+            class_name, command = line[:dot_index], line[dot_index + 1:]
+            if '(' in command and ')' in command:
+                command_name, command_args = command.split('(', 1)
+                command_args = command_args.rstrip(')')
+                if command_name in obj_dict:
+                    full_command = f"{class_name} {command_args}"
+                    return obj_dict[command_name](full_command)
+
+        print(f"*** Unknown syntax: {line}")
+        return False
 
 
 if __name__ == "__main__":
-    my_cmd = HBNBCommand()
-    my_cmd.cmdloop()
+    HBNBCommand().cmdloop()
