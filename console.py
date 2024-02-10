@@ -101,9 +101,10 @@ class HBNBCommand(cmd.Cmd):
         if not split_list or split_list[0] not in self.__classes:
             print(0)
         else:
-            count = sum(1)
+            count = 0
             for obj in storage.all().values():
                 if obj.__class__.__name__ == split_list[0]:
+                    count += 1
                     print(count)
 
     def do_update(self, line):
